@@ -58,6 +58,7 @@ async function getModulesDefinitions(modulesPath, specificRoute, doRequire = tru
  */
 async function consturctServer(moduleDefs) {
   const app = express();
+  const API_PREFIX = process.env.API_PREFIX || '/api'
   const { CORS_ALLOW_ORIGIN } = process.env;
   app.set('trust proxy', true);
 
@@ -111,6 +112,10 @@ async function consturctServer(moduleDefs) {
   /**
    * Serving static files
    */
+  const appDistPath = path.join(__dirname, 'public', 'app');
+  if (fs.existsSync(appDistPath)) {
+    app.use(express.static(appDistPath));
+  }
   app.use(express.static(path.join(__dirname, 'public')));
 
   /**
@@ -124,8 +129,11 @@ async function consturctServer(moduleDefs) {
 
   const moduleDefinitions = moduleDefs || (await getModulesDefinitions(path.join(__dirname, 'module'), {}));
 
+  // 收拢所有动态模块至 Router，统一挂载到 /api
+  const router = express.Router();
+
   for (const moduleDef of moduleDefinitions) {
-    app.use(moduleDef.route, async (req, res) => {
+    router.use(moduleDef.route, async (req, res) => {
       [req.query, req.body].forEach((item) => {
         if (typeof item.cookie === 'string') {
           item.cookie = cookieToJson(decode(item.cookie));
@@ -187,6 +195,18 @@ async function consturctServer(moduleDefs) {
 
         res.header(moduleResponse.headers).status(moduleResponse.status).send(moduleResponse.body);
       }
+    });
+  }
+
+  // 统一前缀
+  app.use(API_PREFIX, router);
+
+  if (fs.existsSync(appDistPath)) {
+    app.get('*', (req, res, next) => {
+      if (req.method !== 'GET' || req.path.startsWith('/docs') || req.path.includes('.')) {
+        return next();
+      }
+      res.sendFile(path.join(appDistPath, 'index.html'));
     });
   }
 
