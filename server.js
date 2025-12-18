@@ -206,7 +206,7 @@ async function consturctServer(moduleDefs) {
       if (req.method !== 'GET' || req.path.startsWith('/docs') || req.path.includes('.')) {
         return next();
       }
-      res.sendFile(path.join(appDistPath, 'index.html'));
+      res.type('html').sendFile(path.join(appDistPath, 'index.html'));
     });
   }
 
