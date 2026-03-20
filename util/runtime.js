@@ -1,4 +1,4 @@
-const { URL } = require('node:url');
+const { URL } = require('url');
 
 /** @type {string | undefined} */
 let cachedProxyRaw;
@@ -45,6 +45,18 @@ function applyCliOverrides(args) {
 
   if (parsed.platform) {
     process.env.platform = parsed.platform;
+  }
+
+  if (parsed.guid) {
+    process.env.KUGOU_API_GUID = parsed.guid;
+  }
+
+  if (parsed.dev) {
+    process.env.KUGOU_API_DEV = parsed.dev;
+  }
+
+  if (parsed.mac) {
+    process.env.KUGOU_API_MAC = parsed.mac;
   }
 
   if (parsed.port) {
